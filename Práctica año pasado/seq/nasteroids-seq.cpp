@@ -25,7 +25,7 @@ struct planeta {
 	double posx;
 	double posy;
 	double masa;
-};	
+};
 
 int main(int argc, char *argv[]) {
 
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 	/* Definicion de constantes dadas por el enunciado del problema */
 	const double gravedad = 6.674e-5;
 	const double intervalo_tiempo = 0.1;
-	const double distancia_min = 2.0;
+	const double distancia_min = 5.0;
 	const double ancho = 200;
 	const double alto = 200;
 	const double media = 1000;
@@ -58,10 +58,10 @@ int main(int argc, char *argv[]) {
 	uniform_real_distribution<double> ydist{0.0, std::nextafter(alto, std::numeric_limits<double>::max())};
 	normal_distribution<double> mdist{media, desviacion};
 
-	/* Crea un fichero de salida */
+	/* Crear fichero de salida */
    	ofstream fs("init_conf.txt");
 
-   	/* Escribe los argumentos en el fichero init_conf.txt */
+   	/* Escribir argumentos en el fichero init_conf.txt */
    	for (int i = 0; i < argc - 1; i++) {
 
    		if (i != 3) fs << argv[i+1] << " ";
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
 	/* Cierra el fichero init_cong.txt */
 	fs.close();
 
-	/* Definicial e inicializacion de variables auxiliares para los calculos */
+	/* Definir e inicializar variables auxiliares para los calculos */
 	double distancia_ab = 0;
 	double pendiente_ab = 0;
 	double angulo_ab = 0;
@@ -121,10 +121,10 @@ int main(int argc, char *argv[]) {
 			for (unsigned int k = j+1; k < asteroides.size(); k++) {
 
 				/* Calcula la distancia entre el asteroide "j" y el asteroide "k" */
-				distancia_ab = sqrt(pow(asteroides[j].posx - asteroides[k].posx, 2.0) + 
+				distancia_ab = sqrt(pow(asteroides[j].posx - asteroides[k].posx, 2.0) +
 									pow(asteroides[j].posy - asteroides[k].posy, 2.0));
 
-				/* Si la distancia entre ambos asteroides es menor a 2 se intercambian las velocidades de la iteracion anterior */
+				/* Si la distancia entre ambos asteroides es menor a 5 se intercambian las velocidades de la iteracion anterior */
 				if (distancia_ab <= distancia_min) {
 
 					if (j > 0) {
@@ -138,29 +138,36 @@ int main(int argc, char *argv[]) {
 					}
 				}
 
-				/* Si las distancia es mayor a la distancia minima (2) se toma en cuenta la fuerza de atraccion entre ellos */
+				/* Si la distancia es mayor que 5 se toma en cuenta la fuerza de atraccion entre ellos */
 				else {
 
 					/* Calcula la pendiente entre el asteroide "j" y el asteroide "k" */
 					pendiente_ab = (asteroides[j].posy - asteroides[k].posy) / (asteroides[j].posx - asteroides[k].posx);
 
-					/* Si la pendiente es mayor a 1 o menor a -1 se modifica el valor de la misma */
-					if (pendiente_ab > 1 || pendiente_ab < -1) pendiente_ab -= int(pendiente_ab / 1);
+					/* Si la pendiente es mayor a 1, se fija su valor a 1*/
+					if (pendiente_ab > 1){
+						pendiente_ab = 1;
+					}
+					/* Si la pendiente es menor a -1, se fija su valor a -1*/
+					else if (pendiente_ab < -1) {
+						pendiente_ab = -1;
+					}
 
 					/* El angulo entre asteroides sera la ArcTan(pendiente) */
 					angulo_ab = atan(pendiente_ab);
 
 					/* Calculo de la fuerza resultante */
 					fuerza = ((gravedad * asteroides[j].masa * asteroides[k].masa) / (pow(distancia_ab, 2.0)));
-					/* Si la fuerza resultante es mayor a 200, se trunca a este valor */
-					if (fuerza > 200) fuerza = 200;
-					
+					/* Si la fuerza resultante es mayor a 100, se trunca a este valor */
+					if (fuerza > 100) fuerza = 100;
+
 					/* La fuerza resultante por el coseno del angulo se agrega positivamente al asteroide j y se resta al asteroide k en el eje x */
 					asteroides[j].sum_fx += fuerza * cos(angulo_ab);
 					asteroides[k].sum_fx -= fuerza * cos(angulo_ab);
-					 
+
 					/* La fuerza resultante por el seno del angulo se agrega positivamente al asteroide j y se resta al asteroide k en el eje y */
 					asteroides[j].sum_fy += fuerza * sin(angulo_ab);
+
 					asteroides[k].sum_fy -= fuerza * sin(angulo_ab);
 				}
 			}
@@ -172,36 +179,42 @@ int main(int argc, char *argv[]) {
 			for (unsigned int z = 0; z < asteroides.size(); z++) {
 
 				/* Calcula la distancia entre el asteroide "z" y el planeta "q" */
-				distancia_ab = sqrt(pow(planetas[q].posx - asteroides[z].posx, 2.0) + 
+				distancia_ab = sqrt(pow(planetas[q].posx - asteroides[z].posx, 2.0) +
 									pow(planetas[q].posy - asteroides[z].posy, 2.0));
 
 					/* Calculo de la pendiente entre elementos */
 					pendiente_ab = (planetas[q].posy - asteroides[z].posy) / (planetas[q].posx - asteroides[z].posx);
-
-					/* Si la pendiente es mayor a 1 o menor a -1 se modifica el valor de la misma */
-					if (pendiente_ab > 1 || pendiente_ab < -1) pendiente_ab -= int(pendiente_ab / 1);
+					/* Si la pendiente es mayor a 1, se fija su valor a 1*/
+					if (pendiente_ab > 1){
+						pendiente_ab = 1;
+					}
+					/* Si la pendiente es menor a -1, se fija su valor a -1*/
+					else if (pendiente_ab < -1) {
+						pendiente_ab = -1;
+					}
 
 					/* EL angulo entre asteroide y planeta sera el ArcTan(pendiente) */
 					angulo_ab = atan(pendiente_ab);
 
 					/* Calculo de la fuerza en el resultante entre ambos elementos */
 					fuerza = ((gravedad * planetas[q].masa * asteroides[z].masa) / (pow(distancia_ab, 2.0)));
-					/* Si la fuerza resultante es mayor a 200 se trunca a este valor */
-					if (fuerza > 200) fuerza = 200;
+					/* Si la fuerza resultante es mayor a 100 se fija a este valor */
+					if (fuerza > 100) fuerza = 100;
 
 					/* El producto de la fuerza por el coseno del angulo se agrega positvamente al sumatorio del asteroide "z" en el eje x */
 					asteroides[z].sum_fx += fuerza * cos(angulo_ab);
-					
+
 					/* El producto de la fuerza por el seno del angulo se agrega positvamente al sumatorio del asteroide "z" en el eje y */
-					asteroides[z].sum_fy += fuerza * sin(angulo_ab); 
+					asteroides[z].sum_fy += fuerza * sin(angulo_ab);
 			}
 		}
 
-		for (unsigned int j = 0; j < asteroides.size(); j++) {
+		for (unsigned int j = 0			/* Si hubo rebote contra los bordes, se posiciona el asteroide y modifica su velocidad */
+	; j < asteroides.size(); j++) {
 
 			/* Calculo de las nuevas aceleraciones */
-			aceleracionx = asteroides[j].sum_fx / asteroides[j].masa;
-			aceleraciony = asteroides[j].sum_fy / asteroides[j].masa;
+			aceleracionx = (1/asteroides[j].masa) * asteroides[j].sum_fx;
+			aceleraciony = (1/asteroides[j].masa) * asteroides[j].sum_fy;
 
 			/* Calculo de las nuevas velocidades */
 			asteroides[j].nueva_vx = asteroides[j].vx + (aceleracionx * intervalo_tiempo);
@@ -210,22 +223,23 @@ int main(int argc, char *argv[]) {
 			/* Calculo de las nuevas posiciones */
 			asteroides[j].nueva_posx = asteroides[j].posx + (asteroides[j].nueva_vx * intervalo_tiempo);
 			asteroides[j].nueva_posy = asteroides[j].posy + (asteroides[j].nueva_vy * intervalo_tiempo);
-		
-			/* Si hubo rebote contra los bordes, se reposiciona el asteroide y modifica su velocidad */
+
+			/* Si el asteroide rebota contra un borde, se posiciona a 5 puntos del limite del espacio
+			y se modifica su velocidad */
 			if (asteroides[j].nueva_posx <= 0) {
-				asteroides[j].nueva_posx = 2;
+				asteroides[j].nueva_posx = 5;
 				asteroides[j].nueva_vx *= (-1);
 			}
 			if (asteroides[j].nueva_posx >= ancho) {
-				asteroides[j].nueva_posx = ancho - 2;
+				asteroides[j].nueva_posx = ancho - 5;
 				asteroides[j].nueva_vx *= (-1);
 			}
 			if (asteroides[j].nueva_posy <= 0) {
-				asteroides[j].nueva_posy = 2;
+				asteroides[j].nueva_posy = 5;
 				asteroides[j].nueva_vy *= (-1);
 			}
 			if (asteroides[j].nueva_posy >= alto) {
-				asteroides[j].nueva_posy = alto - 2;
+				asteroides[j].nueva_posy = alto - 5;
 				asteroides[j].nueva_vy *= (-1);
 			}
 		}
@@ -240,6 +254,8 @@ int main(int argc, char *argv[]) {
 			asteroides[i].vy = asteroides[i].nueva_vy;
 			asteroides[i].sum_fx = 0;
 			asteroides[i].sum_fy = 0;
+
+			cout << "Velocidad del asteroide" << i << " : " << asteroides[i].nueva_vx << ", " << asteroides[i].nueva_vy << "\n";
 		}
 	}
 
