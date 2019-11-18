@@ -270,10 +270,11 @@ int main(int argc, char *argv[]) {
 				/* EL angulo entre asteroide y planeta sera el ArcTan(pendiente) */
 				angulo_ab = atan(pendiente_ab);
 
+				// TODO: FUERZA UMBRAL EN LA QUE TRUNCAR OK
 				/* Calculo de la fuerza en el resultante entre ambos elementos */
 				fuerza = ((gravedad * planetas[y].masa * asteroides[j].masa) / (pow(distancia_ab, 2.0)));
-				/* Si la fuerza resultante es mayor a 200 se trunca a este valor */
-				if (fuerza > 200) fuerza = 200;
+				/* Si la fuerza resultante es mayor a 100 se trunca a este valor */
+				if (fuerza > 100) fuerza = 100;
 
 				/* El producto de la fuerza por el coseno del angulo se agrega positvamente al sumatorio del asteroide "j" en el eje x */
 				sumatorios_fx[j] += fuerza * cos(angulo_ab);
