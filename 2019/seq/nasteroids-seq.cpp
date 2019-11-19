@@ -47,9 +47,8 @@ void comprobarBordes(asteroide &ast, double width, double height);
 
 int main(int argc, char *argv[]) {
 
-	/* Comprueba el numero de argumentos e imprime el mensaje de error correspondiente */
+	//////////// V A L I D A C I O N - D E - A R G U M E N T O S ////////////
 	if (argc != 5 || atoi(argv[1]) < 0 || atoi(argv[2]) < 0 || atoi(argv[3]) < 0 || atoi(argv[4]) <= 0) {
-
 		cout << "nasteroids-seq: Wrong arguments." << endl;
 		cout << "Correct use:" << endl;
 		cout << "nasteroids-seq num_asteroides num_iteraciones num_planetas semilla" << endl;
@@ -62,7 +61,7 @@ int main(int argc, char *argv[]) {
 	int num_planetas = atoi(argv[3]);
 	int semilla = atoi(argv[4]);
 
-	// Constantes proporcionadas por el enunciado ->> NO LAS ASEMOS GLOVALES PK SE FUCKEA EL PARALELO - GOGLE
+	// Constantes proporcionadas por el enunciado -
 	const double gravity = 6.674e-5;
 	const double time_interval = 0.1;
 	const double dmin = 5.0;
@@ -72,32 +71,34 @@ int main(int argc, char *argv[]) {
 	const double sdm = 50;
 
 	// Generación aleatoria del tablero utilizando la semilla
-	default_random_engine re{semilla};
+	default_random_engine random{semilla};
 	uniform_real_distribution<double> xdist{0.0, std::nextafter(width, std::numeric_limits<double>::max())};
 	uniform_real_distribution<double> ydist{0.0, std::nextafter(height, std::numeric_limits<double>::max())};
 	normal_distribution<double> mdist{mean, sdm};
 
 	/* Crear fichero de salida */
-   	ofstream fs("init_conf.txt");
+  ofstream fs("init_conf.txt");
 
-   	/* Escribir argumentos en el fichero init_conf.txt */
-   	for (int i = 0; i < argc - 1; i++) {
+ 	/* Escribir argumentos en el fichero init_conf.txt */
+ 	for (int i = 0; i < argc - 1; i++) {
+ 		if (i != 3){
+			fs << argv[i+1] << " ";
+		} else {
+			fs << argv[i+1] << endl;
+		}
+ 	}
 
-   		if (i != 3) fs << argv[i+1] << " ";
-   		else fs << argv[i+1] << endl;
-   	}
+ 	// Fija 3 decimales al escribir en los ficheros
+ 	fs << setprecision(3) << fixed;
 
-   	/* Fija 3 decimales al escribir en los ficheros */
-   	fs << setprecision(3) << fixed;
-
-		// Vector que almacena los asteroides
+	// Vector que almacena los asteroides
 	vector<asteroide> asteroides(num_asteroides);
-	vector<planeta> planetas(num_planetas); /* Vector que almacena los planetas */
+	// Vector que almacena los planetas
+	vector<planeta> planetas(num_planetas);
 
-	/* Generacion de los asteroides y escritura de sus datos en el fichero init_conf.txt */
+	// Generacion de los asteroides y escritura de sus datos en el fichero init_conf.txt
 	for(unsigned int i = 0; i < asteroides.size(); i++) {
-
-		asteroides[i] = {xdist(re), ydist(re), mdist(re), 0, 0, 0, 0, 0, 0, 0, 0};
+		asteroides[i] = {xdist(random), ydist(random), mdist(random), 0, 0, 0, 0, 0, 0, 0, 0};
 		fs << asteroides[i].pX << " " << asteroides[i].pY << " " << asteroides[i].masa << endl;
 	}
 
@@ -105,16 +106,16 @@ int main(int argc, char *argv[]) {
 	for(unsigned int i = 0; i < planetas.size(); i++) {
 
 		if (i % 4 == 0) {
-			planetas[i] = {0.0, ydist(re), mdist(re) * 10};
+			planetas[i] = {0.0, ydist(random), mdist(random) * 10};
 		}
 		else if (i % 4 == 1) {
-			planetas[i] = {xdist(re), 0.0, mdist(re) * 10};
+			planetas[i] = {xdist(random), 0.0, mdist(random) * 10};
 		}
 		else if (i % 4 == 2) {
-			planetas[i] = {200.0, ydist(re), mdist(re) * 10};
+			planetas[i] = {200.0, ydist(random), mdist(random) * 10};
 		}
 		else if (i % 4 == 3) {
-			planetas[i] = {xdist(re), 200.0, mdist(re) * 10};
+			planetas[i] = {xdist(random), 200.0, mdist(random) * 10};
 		}
 		fs << planetas[i].pX << " " << planetas[i].pY << " " << planetas[i].masa << endl;
 	}
@@ -126,7 +127,7 @@ int main(int argc, char *argv[]) {
 	double distancia = 0;
 	double pendiente = 0;
 	double angulo = 0;
-	double aceleracion[2]; // 2 componentes, X e Y
+	double aceleracion[2] = {0}; // 2 componentes, X e Y
 	double vX_aux = 0;
 	double vY_aux = 0;
 	double fuerza = 0;
@@ -171,7 +172,7 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		//TODO: PROBAR A CAMBIAR EL ORDEN DE LOS BUCLES (EXT TO INT, INT TO EXT), ES CONCEPTUALMENTE LO MISMO?
+
 		for (unsigned int q = 0; q < planetas.size(); q++) {
 			/* Para el mismo asteroide "z", despues de evaluar la interaccion con el resto de asteroides, se hace lo propio
 			para con todos los planetas */
@@ -198,23 +199,52 @@ int main(int argc, char *argv[]) {
 		/* Si hubo rebote contra los bordes, se posiciona el asteroide y modifica su velocidad */
 		for (unsigned int j = 0; j < asteroides.size(); j++) {
 			/* Calculo de las nuevas aceleraciones */
-			calcularNuevaAceleracion(asteroides[j], aceleracion);
+			//calcularNuevaAceleracion(asteroides[j], aceleracion);
+			aceleracion[X] = asteroides[j].sum_fX / asteroides[j].masa;
+			aceleracion[Y] = asteroides[j].sum_fY / asteroides[j].masa;
 
 			/* Calculo de las nuevas velocidades */
-			calcularNuevasVelocidades(asteroides[j], aceleracion, time_interval);
+			//calcularNuevasVelocidades(asteroides[j], aceleracion, time_interval);
+			asteroides[j].sig_vX = asteroides[j].vX + (aceleracion[X] * time_interval);
+			asteroides[j].sig_vY = asteroides[j].vY + (aceleracion[Y] * time_interval);
 
 			/* Calculo de las nuevas posiciones */
-			calcularNuevaPosicion(asteroides[j], time_interval);
+			//calcularNuevaPosicion(asteroides[j], time_interval);
+			asteroides[j].sig_pX = asteroides[j].pX + (asteroides[j].sig_vX * time_interval);
+			asteroides[j].sig_pY = asteroides[j].pY + (asteroides[j].sig_vY * time_interval);
 
 			/* Si el asteroide rebota contra un borde, se posiciona a 5 puntos del limite del espacio
 			y se modifica su velocidad */
-			comprobarBordes(asteroides[j], width, height);
+			//comprobarBordes(asteroides[j], width, height);
+			if (asteroides[j].sig_pX <= 0) {
+				asteroides[j].sig_pX = 5;
+				asteroides[j].sig_vX *= (-1);
+			}
+			if (asteroides[j].sig_pX >= width) {
+				asteroides[j].sig_pX = width - 5;
+				asteroides[j].sig_vX *= (-1);
+			}
+			if (asteroides[j].sig_pY <= 0) {
+				asteroides[j].sig_pY = 5;
+				asteroides[j].sig_vY *= (-1);
+			}
+			if (asteroides[j].sig_pY >= height) {
+				asteroides[j].sig_pY = height - 5;
+				asteroides[j].sig_vY *= (-1);
+			}
 		}
 
 		/* Actualizar posiciones y velocidades de cada asteroide. Los sumatorios de fuerzas se reinician a 0 */
 		for (unsigned int ii = 0; ii< asteroides.size(); ii++) {
-			actualizarAsteroide(asteroides[ii]);
-			cout << "Velocidad del asteroide" << ii << " en iteración" << i << ":" << asteroides[ii].sig_vX << ", " << asteroides[ii].sig_vY << "\n";
+			//actualizarAsteroide(asteroides[ii]);
+
+			asteroides[ii].pX = asteroides[ii].sig_pX;
+			asteroides[ii].pY = asteroides[ii].sig_pY;
+			asteroides[ii].vX = asteroides[ii].sig_vX;
+			asteroides[ii].vY = asteroides[ii].sig_vY;
+			asteroides[ii].sum_fX = 0;
+			asteroides[ii].sum_fY = 0;
+			cout << "Velocidad del asteroide [" << ii << "]: " << asteroides[ii].sig_vX << ", " << asteroides[ii].sig_vY << "\n";
 		}
 	}
 
