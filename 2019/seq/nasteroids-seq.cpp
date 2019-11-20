@@ -31,7 +31,7 @@ struct planeta {
 };
 
 // ------------------------------------ Funciones auxiliares ------------------------------------------ //
-//void actualizarAsteroide(asteroide *ast);
+void actualizarAsteroide(asteroide *ast);
 double calcularDistanciaAsteroide(asteroide cuerpo1, asteroide cuerpo2);
 double calcularDistanciaPlaneta(planeta cuerpo1, asteroide cuerpo2);
 double calcularPendienteAsteroide(asteroide cuerpo1, asteroide cuerpo2);
@@ -216,14 +216,7 @@ int main(int argc, char *argv[]) {
 
 		/* Actualizar posiciones y velocidades de cada asteroide. Los sumatorios de fuerzas se reinician a 0 */
 		for (unsigned int ii = 0; ii< asteroides.size(); ii++) {
-			//actualizarAsteroide(asteroides[ii]);
-
-			asteroides[ii].pX = asteroides[ii].sig_pX;
-			asteroides[ii].pY = asteroides[ii].sig_pY;
-			asteroides[ii].vX = asteroides[ii].sig_vX;
-			asteroides[ii].vY = asteroides[ii].sig_vY;
-			asteroides[ii].sum_fX = 0;
-			asteroides[ii].sum_fY = 0;
+			actualizarAsteroide(&asteroides[ii]);
 			cout << "Velocidad del asteroide [" << ii << "]: " << asteroides[ii].sig_vX << ", " << asteroides[ii].sig_vY << "\n";
 		}
 	}
@@ -250,8 +243,7 @@ int main(int argc, char *argv[]) {
 
 
 /////////////////////////////// Cuerpo de las funciones auxiliares ///////////////////////////////////
-/*void actualizarAsteroide(asteroide ast){
-	ast.pX = 0;
+void actualizarAsteroide(asteroide *ast){
 	ast -> pX = ast -> sig_pX;
 	ast -> pY = ast -> sig_pY;
 	ast -> vX = ast -> sig_vX;
@@ -259,7 +251,7 @@ int main(int argc, char *argv[]) {
 	ast -> sum_fX = 0;
 	ast -> sum_fY = 0;
 }
-*/
+
 double calcularDistanciaAsteroide(asteroide cuerpo1, asteroide cuerpo2){
 	return sqrt(pow(cuerpo1.pX - cuerpo2.pX, 2.0) + pow(cuerpo1.pY - cuerpo2.pY, 2.0));
 }
