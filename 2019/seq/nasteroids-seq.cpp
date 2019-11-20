@@ -7,7 +7,6 @@
 
 using namespace std;
 
-// Constantes para programar bien porque molo - Linares
 const int X = 0;
 const int Y = 1;
 
@@ -31,8 +30,8 @@ struct planeta {
 	double masa;
 };
 
-// ------ Funciones auxiliares ------ //
-void actualizarAsteroide(asteroide ast);
+// ------------------------------------ Funciones auxiliares ------------------------------------------ //
+//void actualizarAsteroide(asteroide *ast);
 double calcularDistanciaAsteroide(asteroide cuerpo1, asteroide cuerpo2);
 double calcularDistanciaPlaneta(planeta cuerpo1, asteroide cuerpo2);
 double calcularPendienteAsteroide(asteroide cuerpo1, asteroide cuerpo2);
@@ -44,6 +43,7 @@ void calcularNuevaAceleracion(asteroide ast, double *aceleracion);
 void calcularNuevasVelocidades(asteroide &ast, double aceleracion[2], double time_interval);
 void calcularNuevaPosicion(asteroide &ast, double time_interval);
 void comprobarBordes(asteroide &ast, double width, double height);
+// --------------------------------------------------------------------------------------------------- //
 
 int main(int argc, char *argv[]) {
 
@@ -196,42 +196,22 @@ int main(int argc, char *argv[]) {
 				asteroides[z].sum_fY += fuerza * sin(angulo);
 			}
 		}
+
 		/* Si hubo rebote contra los bordes, se posiciona el asteroide y modifica su velocidad */
 		for (unsigned int j = 0; j < asteroides.size(); j++) {
+
 			/* Calculo de las nuevas aceleraciones */
-			//calcularNuevaAceleracion(asteroides[j], aceleracion);
-			aceleracion[X] = asteroides[j].sum_fX / asteroides[j].masa;
-			aceleracion[Y] = asteroides[j].sum_fY / asteroides[j].masa;
+			calcularNuevaAceleracion(asteroides[j], aceleracion);
 
 			/* Calculo de las nuevas velocidades */
-			//calcularNuevasVelocidades(asteroides[j], aceleracion, time_interval);
-			asteroides[j].sig_vX = asteroides[j].vX + (aceleracion[X] * time_interval);
-			asteroides[j].sig_vY = asteroides[j].vY + (aceleracion[Y] * time_interval);
+			calcularNuevasVelocidades(asteroides[j], aceleracion, time_interval);
 
 			/* Calculo de las nuevas posiciones */
-			//calcularNuevaPosicion(asteroides[j], time_interval);
-			asteroides[j].sig_pX = asteroides[j].pX + (asteroides[j].sig_vX * time_interval);
-			asteroides[j].sig_pY = asteroides[j].pY + (asteroides[j].sig_vY * time_interval);
+			calcularNuevaPosicion(asteroides[j], time_interval);
 
 			/* Si el asteroide rebota contra un borde, se posiciona a 5 puntos del limite del espacio
 			y se modifica su velocidad */
-			//comprobarBordes(asteroides[j], width, height);
-			if (asteroides[j].sig_pX <= 0) {
-				asteroides[j].sig_pX = 5;
-				asteroides[j].sig_vX *= (-1);
-			}
-			if (asteroides[j].sig_pX >= width) {
-				asteroides[j].sig_pX = width - 5;
-				asteroides[j].sig_vX *= (-1);
-			}
-			if (asteroides[j].sig_pY <= 0) {
-				asteroides[j].sig_pY = 5;
-				asteroides[j].sig_vY *= (-1);
-			}
-			if (asteroides[j].sig_pY >= height) {
-				asteroides[j].sig_pY = height - 5;
-				asteroides[j].sig_vY *= (-1);
-			}
+			comprobarBordes(asteroides[j], width, height);
 		}
 
 		/* Actualizar posiciones y velocidades de cada asteroide. Los sumatorios de fuerzas se reinician a 0 */
@@ -265,16 +245,21 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 
-///// Cuerpo de las funciones auxiliares ////
-void actualizarAsteroide(asteroide ast){
-	ast.pX = ast.sig_pX;
-	ast.pY = ast.sig_pY;
-	ast.vX = ast.sig_vX;
-	ast.vY = ast.sig_vY;
-	ast.sum_fX = 0;
-	ast.sum_fY = 0;
-}
 
+
+
+
+/////////////////////////////// Cuerpo de las funciones auxiliares ///////////////////////////////////
+/*void actualizarAsteroide(asteroide ast){
+	ast.pX = 0;
+	ast -> pX = ast -> sig_pX;
+	ast -> pY = ast -> sig_pY;
+	ast -> vX = ast -> sig_vX;
+	ast -> vY = ast -> sig_vY;
+	ast -> sum_fX = 0;
+	ast -> sum_fY = 0;
+}
+*/
 double calcularDistanciaAsteroide(asteroide cuerpo1, asteroide cuerpo2){
 	return sqrt(pow(cuerpo1.pX - cuerpo2.pX, 2.0) + pow(cuerpo1.pY - cuerpo2.pY, 2.0));
 }
