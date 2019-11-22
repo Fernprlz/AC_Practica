@@ -1,7 +1,16 @@
 ﻿# Práctica final de Arquitectura de Computadores
-## Comentarios:
-* En la práctica del año pasado (OG_2018) el archivo paralelo no esta actualizado con los cambios de este año (distancia minima = 5, etc).
+## Progreso:
+* [X] El archivo secuencial esta correcto.
+* [ ] El archivo paralelo esta correcto.
+    * [ ] Funciones implementadas.
+    * [ ] Pragmas funcionan.
+* [ ] Los resultados de las pruebas son correctos.
+* [ ] Memoria terminada.
+* [ ] Práctica aprobada.
+* [ ] Cervezas bebidas.
 
-* En nuestra versión, ahora mismo el archivo seq está correcto, pero en la última parte de escribir los datos en el output no está implementado en funciones. **HACE FALTA CORREGIR ESTAS FUNCIONES.**
+
+## Comentarios:
+* Mucha atención a los TODO's
 
 * **CAMBIAR FS A OTRO NOMBRE (FILE DESCRIPTOR)**
