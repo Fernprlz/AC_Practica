@@ -144,6 +144,7 @@ int main(int argc, char *argv[]) {
 				/* Calcula la distancia entre el asteroide "j" y el asteroide "k" */
 				distancia = calcularDistanciaAsteroide(asteroides[j], asteroides[k]);
 
+				//TODO: OJO, SE PUEDE DAR EL CASO DE QUE LA DISTANCIA SEA MENOR PERO J SEA MAYOR, CON LO CUAL NO DEBERIA CALCULARSE LA FUERZA
 				/* Si la distancia entre ambos asteroides es menor a 5 se intercambian las velocidades de la iteracion anterior */
 				if (distancia <= dmin && j > 0) {
 						vX_aux = asteroides[j].vX;
@@ -152,10 +153,8 @@ int main(int argc, char *argv[]) {
 						asteroides[j].vY = asteroides[k].vY;
 						asteroides[k].vX = vX_aux;
 						asteroides[k].vY = vY_aux;
-				}
-
-				/* Si la distancia es mayor que 5 se toma en cuenta la fuerza de atraccion entre ellos */
-				else {
+				}	else {
+					/* Si la distancia es mayor que 5 se toma en cuenta la fuerza de atraccion entre ellos */
 
 					/* Calcula la pendiente entre el asteroide "j" y el asteroide "k", equilibrandola si es mayor a 1 o menor que -1 */
 					pendiente = calcularPendienteAsteroide(asteroides[j], asteroides[k]);
