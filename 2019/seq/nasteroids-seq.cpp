@@ -31,18 +31,18 @@ struct planeta {
 };
 
 // ------------------------------------ Funciones auxiliares ------------------------------------------ //
-void actualizarAsteroide(asteroide *ast);
 double calcularDistanciaAsteroide(asteroide cuerpo1, asteroide cuerpo2);
-double calcularDistanciaPlaneta(planeta cuerpo1, asteroide cuerpo2);
 double calcularPendienteAsteroide(asteroide cuerpo1, asteroide cuerpo2);
-double calcularPendientePlaneta(planeta cuerpo1, asteroide cuerpo2);
 double calcularFuerzaAsteroide(asteroide cuerpo1, asteroide cuerpo2, double gravity, double distancia);
+double calcularDistanciaPlaneta(planeta cuerpo1, asteroide cuerpo2);
+double calcularPendientePlaneta(planeta cuerpo1, asteroide cuerpo2);
 double calcularFuerzaPlaneta(planeta cuerpo1, asteroide cuerpo2, double gravity, double distancia);
 void descomponerFuerzas(asteroide &ast1, asteroide &ast2, double fuerza, double angulo);
 void calcularNuevaAceleracion(asteroide ast, double *aceleracion);
 void calcularNuevasVelocidades(asteroide &ast, double aceleracion[2], double time_interval);
 void calcularNuevaPosicion(asteroide &ast, double time_interval);
 void comprobarBordes(asteroide &ast, double width, double height);
+void actualizarAsteroide(asteroide *ast);
 // --------------------------------------------------------------------------------------------------- //
 
 int main(int argc, char *argv[]) {
@@ -242,40 +242,13 @@ int main(int argc, char *argv[]) {
 
 
 /////////////////////////////// Cuerpo de las funciones auxiliares ///////////////////////////////////
-void actualizarAsteroide(asteroide *ast){
-	ast -> pX = ast -> sig_pX;
-	ast -> pY = ast -> sig_pY;
-	ast -> vX = ast -> sig_vX;
-	ast -> vY = ast -> sig_vY;
-	ast -> sum_fX = 0;
-	ast -> sum_fY = 0;
-}
 
 double calcularDistanciaAsteroide(asteroide cuerpo1, asteroide cuerpo2){
 	return sqrt(pow(cuerpo1.pX - cuerpo2.pX, 2.0) + pow(cuerpo1.pY - cuerpo2.pY, 2.0));
 }
 
-double calcularDistanciaPlaneta(planeta cuerpo1, asteroide cuerpo2){
-	return sqrt(pow(cuerpo1.pX - cuerpo2.pX, 2.0) + pow(cuerpo1.pY - cuerpo2.pY, 2.0));
-}
 
 double calcularPendienteAsteroide(asteroide cuerpo1, asteroide cuerpo2){
-
-	double pendiente = (cuerpo1.pY - cuerpo2.pY) / (cuerpo1.pX - cuerpo2.pX);
-
-	/* Si la pendiente es mayor a 1, se fija su valor a 1*/
-	if (pendiente > 1){
-		pendiente = 1;
-	}
-	/* Si la pendiente es menor a -1, se fija su valor a -1*/
-	else if (pendiente < -1) {
-		pendiente = -1;
-	}
-
-	return pendiente;
-}
-
-double calcularPendientePlaneta(planeta cuerpo1, asteroide cuerpo2){
 
 	double pendiente = (cuerpo1.pY - cuerpo2.pY) / (cuerpo1.pX - cuerpo2.pX);
 
@@ -298,6 +271,26 @@ double calcularFuerzaAsteroide(asteroide cuerpo1, asteroide cuerpo2, double grav
 		fuerza = 100;
 	}
 	return fuerza;
+}
+
+double calcularDistanciaPlaneta(planeta cuerpo1, asteroide cuerpo2){
+	return sqrt(pow(cuerpo1.pX - cuerpo2.pX, 2.0) + pow(cuerpo1.pY - cuerpo2.pY, 2.0));
+}
+
+double calcularPendientePlaneta(planeta cuerpo1, asteroide cuerpo2){
+
+	double pendiente = (cuerpo1.pY - cuerpo2.pY) / (cuerpo1.pX - cuerpo2.pX);
+
+	/* Si la pendiente es mayor a 1, se fija su valor a 1*/
+	if (pendiente > 1){
+		pendiente = 1;
+	}
+	/* Si la pendiente es menor a -1, se fija su valor a -1*/
+	else if (pendiente < -1) {
+		pendiente = -1;
+	}
+
+	return pendiente;
 }
 
 double calcularFuerzaPlaneta(planeta cuerpo1, asteroide cuerpo2, double gravity, double distancia){
@@ -353,4 +346,12 @@ void comprobarBordes(asteroide &ast, double width, double height){
 		ast.sig_pY = height - 5;
 		ast.sig_vY *= (-1);
 	}
+}
+void actualizarAsteroide(asteroide *ast){
+	ast -> pX = ast -> sig_pX;
+	ast -> pY = ast -> sig_pY;
+	ast -> vX = ast -> sig_vX;
+	ast -> vY = ast -> sig_vY;
+	ast -> sum_fX = 0;
+	ast -> sum_fY = 0;
 }
