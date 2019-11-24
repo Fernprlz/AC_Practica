@@ -14,11 +14,11 @@ const int X = 0;
 const int Y = 1;
 
 struct asteroide {
-	double pX;
-	double pY;
+	double pX;					// Posicion eje x
+	double pY;					// Posicion eje y
 	double masa;
-	double sig_pX;
-	double sig_pY;
+	double sig_pX;			// Siguiente pX calculada (a actualizar en pX)
+	double sig_pY;			// Siguiente pY calculada (a actualizar en py)
 	double vX;
 	double vY;
 	double sig_vX;
@@ -38,31 +38,32 @@ double calcularFuerzaAsteroide(asteroide cuerpo1, asteroide cuerpo2, double grav
 double calcularDistanciaPlaneta(planeta cuerpo1, asteroide cuerpo2);
 double calcularPendientePlaneta(planeta cuerpo1, asteroide cuerpo2);
 double calcularFuerzaPlaneta(planeta cuerpo1, asteroide cuerpo2, double gravity, double distancia);
-void descomponerFuerzas(double *sum_total_f1, double *sum_total_f2, double fuerza, double angulo);
+void descomponerFuerzasX(double *sum_total_f1, double *sum_total_f2, double fuerza, double angulo);
+void descomponerFuerzasY(double *sum_total_f1, double *sum_total_f2, double fuerza, double angulo);
 void calcularNuevaAceleracion(asteroide ast, double sum_fX, double sum_fY, double *aceleracion);
 void calcularNuevasVelocidades(asteroide &ast, double aceleracion[2], double time_interval);
 void calcularNuevaPosicion(asteroide &ast, double time_interval);
-void comprobarBordes(asteroide &ast, double width, double height, double dmin);
+void comprobarBordes(asteroide &ast, double width, double height);
 void actualizarAsteroide(asteroide *ast, double *sum_fX, double *sum_fY);
 // --------------------------------------------------------------------------------------------------- //
 
 int main(int argc, char *argv[]) {
 
-	/* Comprueba el numero de argumentos e imprime el mensaje de error correspondiente */
+	//////////// V A L I D A C I O N - D E - A R G U M E N T O S ////////////
 	if (argc != 5 || atoi(argv[1]) < 0 || atoi(argv[2]) < 0 || atoi(argv[3]) < 0 || atoi(argv[4]) <= 0) {
-
 		cout << "nasteroids-par: Wrong arguments." << endl;
 		cout << "Correct use:" << endl;
 		cout << "nasteroids-par num_asteroides num_iteraciones num_planetas semilla" << endl;
 		return -1;
 	}
 
+	// Guardamos los argumentos en variables locales para acceder a ellas más facilmente
 	int num_asteroides = atoi(argv[1]);
 	int num_iteraciones = atoi(argv[2]);
 	int num_planetas = atoi(argv[3]);
 	int semilla = atoi(argv[4]);
 
-	/* Definicion de constantes dadas por el enunciado del problema */
+	// Constantes proporcionadas por el enunciado
 	const double gravity = 6.674e-5;
 	const double time_interval = 0.1;
 	const double dmin = 5.0;
@@ -71,38 +72,38 @@ int main(int argc, char *argv[]) {
 	const double mean = 1000;
 	const double sdm = 50;
 
-	/* Random distributions */
+	// Generación aleatoria del tablero utilizando la semilla
 	default_random_engine random{semilla};
 	uniform_real_distribution<double> xdist{0.0, std::nextafter(width, std::numeric_limits<double>::max())};
 	uniform_real_distribution<double> ydist{0.0, std::nextafter(height, std::numeric_limits<double>::max())};
 	normal_distribution<double> mdist{mean, sdm};
 
-	/* Crea un fichero de salida */
-	ofstream init_file("init_conf.txt");
+	// Crear .txt con la configuracion inicial
+	ofstream fs("init_conf.txt");
 
-	/* Escribe los argumentos en el fichero init_conf.txt */
+	// Pasar al fichero los argumentos de la configuracion inicial
 	for (int ii = 0; ii < argc - 1; ii++) {
 
-		if (ii != 3) init_file << argv[ii + 1] << " ";
-		else init_file << argv[ii + 1] << endl;
+		if (ii != 3) fs << argv[ii + 1] << " ";
+		else fs << argv[ii + 1] << endl;
 	}
 
-	/* Fija 3 decimales al escribir en el fichero de configuracion inicial init_conf.txt */
-	init_file << setprecision(3) << fixed;
+	// Fijar precisión de 3 decimales en los archivos
+	fs << setprecision(3) << fixed;
 
-	// Vector que almacena los asteroides
+	// Vector que contendra todos los asteroides
 	vector<asteroide> asteroides(num_asteroides);
-	// Vector que almacena los planetas
+	// Vector que contendra todos los planetas
 	vector<planeta> planetas(num_planetas);
 
-	// Generacion de los asteroides y escritura de sus datos en el fichero init_conf.txt
+	// Generar asteroides llenando su vector y escribir sus parametros en el .txt con la configuracion inicial
 	for(unsigned int ast = 0; ast < asteroides.size(); ast++) {
 		asteroides[ast] = {xdist(random), ydist(random), mdist(random), 0, 0, 0, 0, 0, 0};
-		init_file << asteroides[ast].pX << " " << asteroides[ast].pY << " " << asteroides[ast].masa << endl;
+		fs << asteroides[ast].pX << " " << asteroides[ast].pY << " " << asteroides[ast].masa << endl;
 	}
 
 
-	/* Generacion de los planetas y escritura de sus datos en el fichero init_conf.txt */
+	// Generar planetas llenando su vector y escribir sus parametros en el .txt de la configuracion inicial
 	for(unsigned int pla = 0; pla < planetas.size(); pla++) {
 
 		if (pla % 4 == 0) {
@@ -117,117 +118,115 @@ int main(int argc, char *argv[]) {
 		else if (pla % 4 == 3) {
 			planetas[pla] = {xdist(random), height, mdist(random) * 10};
 		}
-		init_file << planetas[pla].pX << " " << planetas[pla].pY << " " << planetas[pla].masa << endl;
+		fs << planetas[pla].pX << " " << planetas[pla].pY << " " << planetas[pla].masa << endl;
 	}
 
-	/* Cierra el fichero init_conf.txt */
-	init_file.close();
+	// Cerrar init_conf.txt
+	fs.close();
 
-	/* Definicion e inicializacion de variables auxiliares para los calculos */
+	// Variables para los calculos
 	double distancia = 0;
 	double pendiente = 0;
 	double angulo = 0;
-	double aceleracion[2] = {0}; // 2 componentes, X e Y
-	double aux_vX = 0;
-	double aux_vY = 0;
+	double aceleracion[2] = {0}; 	// eje X, eje Y
+	double aux_vX = 0;						// Utilizada para intercambiar velocidades
+	double aux_vY = 0;						// Utilizada para intercambiar velocidades
 	double fuerza = 0;
 
-	/* Vectores que almacenaran en la posicion "i" el sumatorio de la fuerza del asteroide "i" en la coordenada correspondiente */
+	// Vectores que almacenan los sumatorios de fuerzas de todos los asteroides (en sus correspondientes indices)
 	vector<double> sum_fX(num_asteroides);
 	vector<double> sum_fY(num_asteroides);
 
-	/* Arreglos bidimensionales (modificados solo por los hilos) que almacenaran en la posicion [i][ast] la fuerza resultante
-	entre el elemento "i" y "ast" en la coordenada correspondiente. Esta matriz sera compartida por todos los hilos sin
-	producirse condiciones de carrera ya que ningun hilo tendra el mismo par de indices (i,ast) a la vez; a lo sumo, compartiran
-	el indice "ast" pero nunca el "i" y por ende accederan a posiciones de memoria distintas */
+	// Arrays de punteros de dos dimensiones. Guardan en el indice [m][n] la fuerza obtenida de la interaccion
+	// entre el cuerpo m y el cuerpo n (en el correspondiente eje).
+	// Los arrays serán compartidos por todos los threads. No se dan condiciones
+	// de carrera porque ningun hilo tendra una pareja de indices identica
 	double **sum_total_fX = new double*[num_asteroides];
 	double **sum_total_fY = new double*[num_asteroides];
 
-	/* Matriz utilizada para marcar las colisiones entre asteroides. Un 1 en la posicion colisiones[i][ast] indica que el
-	asteroide i ha colisionado con el ast. Esto para que posteriormente se recorra la matriz secuencialmente y se intercambien
-	las velocidades en el orden correcto */
-	double **colisiones = new double*[num_asteroides];
+	// Array bidimensional utilizado para recordar las choques entre asteroides. Un 1 en choques[m][n]
+	// significa que el asteroide m choca con el asteroide n.
+	// Se usa para intercambiar las velocidades en el orden correcto, despues de todos los calculos
+	double **choques = new double*[num_asteroides];
 
-
-	/* Creacion de la segunda dimension de las matrices para cada posicion */
+	// Segundas dimensiones de los arrays anteriores
 	for(int ast = 0; ast < num_asteroides; ast++) {
-
 		sum_total_fX[ast] = new double[num_asteroides];
 		sum_total_fY[ast] = new double[num_asteroides];
-		colisiones[ast] = new double[num_asteroides];
+		choques[ast] = new double[num_asteroides];
 	}
 
-	/* Inicializacion de forma paralela de las matrices a 0 */
+	// Inicializar paralelamente los arrays anteriores
 	#pragma omp parallel for
 	for (int ast_1 = 0; ast_1 < num_asteroides; ast_1++) {
 		for (int ast_2 = 0; ast_2 < num_asteroides; ast_2++) {
 			sum_total_fX[ast_1][ast_2] = 0;
 			sum_total_fY[ast_1][ast_2] = 0;
-			colisiones[ast_1][ast_2] = 0;
+			choques[ast_1][ast_2] = 0;
 		}
 	}
 
 	unsigned int ast_1 = 0, ast_2 = 0, pla = 0;
 
+
+	// ----- Interacción asteroides-asteroides ----- //
+	// Primer for loop: iteraciones introducida por el usuario
 	for (int iteracion = 0; iteracion < num_iteraciones; iteracion++) {
-		/* Cada hilo ejecutara cierto numero de iteraciones del bucle anidado a continuacion. Las variables definidas
-		anteriormente para los calculos seran privadas para cada hilo */
-		#pragma omp parallel for private(ast_2, fuerza, distancia, pendiente, angulo) /*schedule(static, num_asteroides/omp_get_num_threads())*/
+		// Cada thread lo ejecutara tantas veces como el usuario haya introducido.
+		// Las variables para los calculos se hacen privadas para cada thread, para evitar condiciones de carrera.
+		#pragma omp parallel for private(ast_2, fuerza, distancia, pendiente, angulo)
+		// Segundo for loop: asteroides
 		for (ast_1 = 0; ast_1 < asteroides.size(); ast_1++) {
 
-			/* Se evalua la interaccion entre el asteroide "ast" y los demas que tengan índice mayor (a partir de ast+1) */
+			// Tercer for loop: interaccion entre el asteroide ast_1 y todos los siguientes
+			// Con esta se comprueba la interaccion entre todos los asteroides
 			for (ast_2 = ast_1 + 1; ast_2 < asteroides.size(); ast_2++) {
 
-				/* Calcula la distancia entre el asteroide "ast" y el asteroide "k" */
+				// Distancia entre asteroides
 				distancia = calcularDistanciaAsteroide(asteroides[ast_1], asteroides[ast_2]);
 
-				//TODO: ESTO ES LO QUE DECIA EL PIBE QUE EL NASTEROIDS NO CUMPLE, QUE EL ASTEROIDE 0 NO LO USA PANADA
-				/* Si la distancia es menor o igual a 2 se marca con un 1 que el asteroide ast colisiono con el asteroide k */
+				// Si distancia <= dmin (5), se señala el choque entre ast_1 y ast_2 para posteriormente intercambiar sus velocidades
 				if (distancia <= dmin) {
 					if (ast_1 > 0) {
-						colisiones[ast_1][ast_2] = 1;
+						choques[ast_1][ast_2] = 1;
 					}
-				} else {
-					/* Si las distancia es mayor a la distancia minima (5) se toma encuenta la fuerza de atraccion entre ellos */
 
-					/* Calcula la pendiente entre el asteroide "ast" y el asteroide "k" */
+				// Caso de que la distancia entre asteroides sea mayor que 5:
+				// calcular pendiente, angulo y fuerza
+				} else {
+					// Calcular pendiente. Si es mayor que 1, se trunca a 1. Si es menor que -1, se trunca a -1
 					pendiente =  calcularPendienteAsteroide(asteroides[ast_1], asteroides[ast_2]);
 
-					/* El angulo entre asteroides sera la ArcTan(pendiente) */
+					// Calcular angulo
 					angulo = atan(pendiente);
 
-					/* Calculo de la fuerza resultante entre ambos asteroides */
+					// Calcular fuerza. Si es mayor que 100, se trunca a este valor
 					fuerza = calcularFuerzaAsteroide(asteroides[ast_1], asteroides[ast_2], gravity, distancia);
 
-					/* La fuerza resultante por el coseno del angulo se agrega positivamente al asteroide j y se resta al asteroide k en el eje x */
-					descomponerFuerzas(&sum_total_fX[ast_1][ast_2], &sum_total_fX[ast_2][ast_1], fuerza, angulo);
-					/* La fuerza resultante por el seno del angulo se agrega positivamente al asteroide j y se resta al asteroide k en el eje y */
-					descomponerFuerzas(&sum_total_fY[ast_1][ast_2], &sum_total_fY[ast_2][ast_1], fuerza, angulo);
+					// Descomponer fuerzas: eje X / eje Y
+					descomponerFuerzasX(&sum_total_fX[ast_1][ast_2], &sum_total_fX[ast_2][ast_1], fuerza, angulo);
+					descomponerFuerzasY(&sum_total_fY[ast_1][ast_2], &sum_total_fY[ast_2][ast_1], fuerza, angulo);
 				}
 			}
 		}
 
-		/* Se copia paralelamente a la posicion "i" de los vectores sum_fX y sum_fY el sumatorio de toda la fila
-		"i" de la matriz de la coordenada correspondiente. Dicho sumatorio se corresponde con las fuerza totales del asteroide
-		"i" para con los demas elementos */
+		// Copiar de forma paralela a sum_fX[ast_1] y sum_fY[ast_1] el sumatorio de todas las fuerzas
+		// del asteroide correspondiente
 		#pragma omp parallel for
 		for (int ast_1 = 0; ast_1 < num_asteroides; ast_1++) {
-
 			for (int ast_2 = 0; ast_2 < num_asteroides; ast_2++) {
-
 				sum_fX[ast_1] += sum_total_fX[ast_1][ast_2];
 				sum_fY[ast_1] += sum_total_fY[ast_1][ast_2];
 			}
 		}
 
-		/* Bucle anidado que se ejecuta de forma secuencial ya que por estar accediendo a las velocidades de los asteroides
-		no es posible paralelizarlo. Se recorre en orden (fila a fila) la matriz "colisiones" para gestionar los choques en
-		orden correcto. Si colisiones[i][ast] == 1 se intercambia la velocidad del asteroide i con el del ast, y asi sucesivamente */
+		// Nested loop que intercambia las velocidades de los asteroides que hayan chocado.
+		// Para ello se utiliza la matriz de choques: si se encuentra un 1 en choques[m][n],
+		// se intercambian las velocidades de los asteroides m y n.
+		// Se ejecuta de forma secuencial porque accede a las velocidades de los asteroides.
 		for (int ast_1 = 0; ast_1 < num_asteroides; ast_1++) {
-
 			for (int ast_2 = ast_1 + 1; ast_2 < num_asteroides; ast_2++) {
-
-				if (colisiones[ast_1][ast_2] == 1) {
+				if (choques[ast_1][ast_2] == 1) {
 					aux_vX = asteroides[ast_1].vX;
 					aux_vY = asteroides[ast_1].vY;
 					asteroides[ast_1].vX = asteroides[ast_2].vX;
@@ -238,100 +237,87 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		/* Cada hilo ejecutara cierto numero de iteraciones del bucle anidado a continuacion. Las variblaes definidas
-		anteriormente para los calculos seran privadas para cada hilo. A diferencia del doble bucle anterior, en este se
-		evalua la fuerza entre los asteroides y planetas, almacenando la fuerza resultante de cada interaccion en los
-		vectores unidimensionales rellenados recientemente. Ningun hilo accedera a la misma posicion de un vector ya que a lo
-		sumo podran coincidir en estar evaluando el mismo planeta (indice "pla") pero nunca el mismo asteroide (con lo cual
-		el indice "ast" sera distinto) */
-		#pragma omp parallel for private(pla, fuerza, distancia, pendiente, angulo)
-		for (unsigned int ast = 0; ast < asteroides.size(); ast++) {
 
-			/* Para un mismo asteroide "ast" se itera sobre todos los planetas "y" evaluando la interaccion para cada par de
-			elementos */
+		// ----- Interacción planetas-asteroides ----- //
+		#pragma omp parallel for private(pla, fuerza, distancia, pendiente, angulo)
+		// Evaluar interaccion entre cada asteroide con cada planeta
+		for (unsigned int ast = 0; ast < asteroides.size(); ast++) {
 			for (pla = 0; pla < planetas.size(); pla++) {
 
-				/* Calcula la distancia entre el asteroide "ast" y el planeta "y" */
+				// Calcular distancia entre planeta y asteroide
 				distancia = calcularDistanciaPlaneta(planetas[pla], asteroides[ast]);
-				/* Calculo de la pendiente entre elementos */
+				// Calcular pendiente. Si es mayor que 1, se trunca a 1. Si es menor que -1, se trunca a -1
 			  pendiente = calcularPendientePlaneta(planetas[pla], asteroides[ast]);
 
-				/* EL angulo entre asteroide y planeta sera el ArcTan(pendiente) */
+				// Calcular angulo
 				angulo = atan(pendiente);
 
-				// TODO: FUERZA UMBRAL EN LA QUE TRUNCAR OK
-				/* Calculo de la fuerza en el resultante entre ambos elementos */
+				// Calcular fuerza. Si es mayor que 100, se trunca a este valor
 				fuerza = calcularFuerzaPlaneta(planetas[pla], asteroides[ast], gravity, distancia);
 
-				/* El producto de la fuerza por el coseno del angulo se agrega positvamente al sumatorio del asteroide "ast" en el eje x */
+				// Sumar cada componente de la fuerza al sumatorio de cada eje (X, Y)
 				sum_fX[ast] += fuerza * cos(angulo);
-
-				/* El producto de la fuerza por el seno del angulo se agrega positvamente al sumatorio del asteroide "ast" en el eje y */
 				sum_fY[ast] += fuerza * sin(angulo);
 			}
 		}
 
-		/* Bucle en el que se realizan todos los calculos para obtener las nuevas velocidades y posiciones de cada asteroide */
-		/* Cada hilo tendra su copia de la variable aceleracionx y aceleraciony. */
+		// Calcular nuevos parametros de los asteroides de forma paralela
+		// Cada thread tiene su copia del array aceleracion, que contiene el eje X y el Y
 		#pragma omp parallel for private(aceleracion)
 		for (unsigned int ast = 0; ast < asteroides.size(); ast++) {
 
-			/* Calculo de las nuevas aceleraciones ->>>>> HAY QUE METER SUMFX TB*/
+			// Nueva aceleracion
 			calcularNuevaAceleracion(asteroides[ast], sum_fX[ast], sum_fY[ast], aceleracion);
 
-			/* Calculo de las nuevas velocidades*/
+			// Nueva velocidad
 			calcularNuevasVelocidades(asteroides[ast], aceleracion, time_interval);
 
-			/* Calculo de las nuevas posiciones*/
+			// Nueva posicion
 			calcularNuevaPosicion(asteroides[ast], time_interval);
 
-			/* Se hubo rebote contra los bordes, se reposiciona el asteroide y modifica su velocidad */
-			comprobarBordes(asteroides[ast], width, height, dmin);
+			// Si se da rebote contra un borde, se coloca el asteroide a 5 unidades de distancia y se cambia su velocidad
+			comprobarBordes(asteroides[ast], width, height);
 		}
 
-		/* Para cada asteroide se actualizan paralelamente las nuevas posiciones y velocidades. Tambien, todos los sumatorios
-		se actualizan a 0 */
+		// Actualizar paralelamente los asteroides con las nuevas velocidades. Fuerzas reseteadas a 0
 		#pragma omp parallel for
 		for (unsigned int ast_1 = 0; ast_1 < asteroides.size(); ast_1++) {
-
 			actualizarAsteroide(&asteroides[ast_1], &sum_fX[ast_1], &sum_fY[ast_1]);
-
 			for (int ast_2 = 0; ast_2 < num_asteroides; ast_2++) {
-
 				sum_total_fX[ast_1][ast_2] = 0;
 				sum_total_fY[ast_1][ast_2] = 0;
-				colisiones[ast_1][ast_2] = 0;
+				choques[ast_1][ast_2] = 0;
 			}
-
 		}
 	}
 
-	/* Crea el fichero de salida out.txt y fija 3 decimales al escribir en el */
-	ofstream out_file("out.txt");
-	out_file << setprecision(3) << fixed;
+	// Crear fichero para output (out.txt)
+	// Fijar precision en 3 decimales
+	ofstream fs2("out.txt");
+	fs2 << setprecision(3) << fixed;
 
-	/* Escribe en el fichero de salida los valores finales de cada asteroide */
+	// Escribir en out.txt los parametros finales de todos los asteroides
 	for (unsigned int i = 0; i < asteroides.size(); i++) {
 
-		out_file << asteroides[i].pX << " " << asteroides[i].pY << " " << asteroides[i].vX << " " << asteroides[i].vY
+		fs2 << asteroides[i].pX << " " << asteroides[i].pY << " " << asteroides[i].vX << " " << asteroides[i].vY
 		<< " " << asteroides[i].masa << endl;
 	}
 
-	/* Cierra el fichero out.txt */
-	out_file.close();
+	// Cerrar out.txt
+	fs2.close();
 
-	/* Libera todas la memoria reservada para las matrices que almacenan las fuerzas */
+	// Liberar memoria
 	#pragma omp parallel for
 	for(int i = 0 ; i < num_asteroides; i++) {
 
 		delete[] sum_total_fX[i];
 		delete[] sum_total_fY[i];
-		delete[] colisiones[i];
+		delete[] choques[i];
 	}
 
 	delete[] sum_total_fX;
 	delete[] sum_total_fY;
-	delete[] colisiones;
+	delete[] choques;
 
 	return 0;
 }
@@ -343,40 +329,44 @@ int main(int argc, char *argv[]) {
 double calcularDistanciaAsteroide(asteroide cuerpo1, asteroide cuerpo2){
 	return sqrt(pow(cuerpo1.pX - cuerpo2.pX, 2.0) + pow(cuerpo1.pY - cuerpo2.pY, 2.0));
 }
+
 double calcularPendienteAsteroide(asteroide cuerpo1, asteroide cuerpo2){
 	double pendiente = (cuerpo1.pY - cuerpo2.pY) / (cuerpo1.pX - cuerpo2.pX);
 
-	/* Si la pendiente es mayor a 1, se fija su valor a 1*/
+	// Si pendiente > 1, se trunca a 1
 	if (pendiente > 1){
 		pendiente = 1;
 	}
-	/* Si la pendiente es menor a -1, se fija su valor a -1*/
+	// Si pendiente < -1, se trunca a -1
 	else if (pendiente < -1) {
 		pendiente = -1;
 	}
 
 	return pendiente;
 }
+
 double calcularFuerzaAsteroide(asteroide cuerpo1, asteroide cuerpo2, double gravity, double distancia){
 	double fuerza = (gravity * cuerpo1.masa * cuerpo2.masa) / (pow(distancia, 2.0));
-	/* Si la fuerza resultante es mayor a 100, se trunca a este valor */
+	// Si fuerza > 100, se trunca a 100
 	if (fuerza > 100){
 		fuerza = 100;
 	}
 	return fuerza;
 }
+
 double calcularDistanciaPlaneta(planeta cuerpo1, asteroide cuerpo2){
 	return sqrt(pow(cuerpo1.pX - cuerpo2.pX, 2.0) + pow(cuerpo1.pY - cuerpo2.pY, 2.0));
 
 }
+
 double calcularPendientePlaneta(planeta cuerpo1, asteroide cuerpo2){
 	double pendiente = (cuerpo1.pY - cuerpo2.pY) / (cuerpo1.pX - cuerpo2.pX);
 
-	/* Si la pendiente es mayor a 1, se fija su valor a 1*/
+	// Si pendiente > 1, se trunca a 1
 	if (pendiente > 1){
 		pendiente = 1;
 	}
-	/* Si la pendiente es menor a -1, se fija su valor a -1*/
+	// Si pendiente < -1, se trunca a -1
 	else if (pendiente < -1) {
 		pendiente = -1;
 	}
@@ -385,17 +375,21 @@ double calcularPendientePlaneta(planeta cuerpo1, asteroide cuerpo2){
 }
 double calcularFuerzaPlaneta(planeta cuerpo1, asteroide cuerpo2, double gravity, double distancia){
 	double fuerza = (gravity * cuerpo1.masa * cuerpo2.masa) / (pow(distancia, 2.0));
-		/* Si la fuerza resultante es mayor a 100, se trunca a este valor */
+	// Si fuerza > 100, se trunca a 100
 		if (fuerza > 100){
 			fuerza = 100;
 		}
 		return fuerza;
 }
 
-void descomponerFuerzas(double *sum_total_f1, double *sum_total_f2, double fuerza, double angulo){
-	/* La fuerza resultante por el coseno del angulo se agrega positivamente al asteroide ast y se resta al asteroide k en el eje x */
+void descomponerFuerzasX(double *sum_total_f1, double *sum_total_f2, double fuerza, double angulo){
 	*sum_total_f1 += fuerza * cos(angulo);
 	*sum_total_f2 -= fuerza * cos(angulo);
+}
+
+void descomponerFuerzasY(double *sum_total_f1, double *sum_total_f2, double fuerza, double angulo){
+	*sum_total_f1 += fuerza * sin(angulo);
+	*sum_total_f2 -= fuerza * sin(angulo);
 }
 
 void calcularNuevaAceleracion(asteroide ast, double sum_fX, double sum_fY, double *aceleracion){
@@ -410,21 +404,21 @@ void calcularNuevaPosicion(asteroide &ast, double time_interval){
 	ast.sig_pX = ast.pX + (ast.sig_vX * time_interval);
 	ast.sig_pY = ast.pY + (ast.sig_vY * time_interval);
 }
-void comprobarBordes(asteroide &ast, double width, double height, double dmin){
+void comprobarBordes(asteroide &ast, double width, double height){
 	if (ast.sig_pX <= 0) {
-		ast.sig_pX = dmin;
+		ast.sig_pX = 5;
 		ast.sig_vX *= (-1);
 	}
 	if (ast.sig_pX >= width) {
-		ast.sig_pX = width - dmin;
+		ast.sig_pX = width - 5;
 		ast.sig_vX *= (-1);
 	}
 	if (ast.sig_pY <= 0) {
-		ast.sig_pY = dmin;
+		ast.sig_pY = 5;
 		ast.sig_vY *= (-1);
 	}
 	if (ast.sig_pY >= height) {
-		ast.sig_pY = height - dmin;
+		ast.sig_pY = height - 5;
 		ast.sig_vY *= (-1);
 	}
 }

@@ -31,18 +31,18 @@ struct planeta {
 };
 
 // ------------------------------------ Funciones auxiliares ------------------------------------------ //
+void actualizarAsteroide(asteroide *ast);
 double calcularDistanciaAsteroide(asteroide cuerpo1, asteroide cuerpo2);
-double calcularPendienteAsteroide(asteroide cuerpo1, asteroide cuerpo2);
-double calcularFuerzaAsteroide(asteroide cuerpo1, asteroide cuerpo2, double gravity, double distancia);
 double calcularDistanciaPlaneta(planeta cuerpo1, asteroide cuerpo2);
+double calcularPendienteAsteroide(asteroide cuerpo1, asteroide cuerpo2);
 double calcularPendientePlaneta(planeta cuerpo1, asteroide cuerpo2);
+double calcularFuerzaAsteroide(asteroide cuerpo1, asteroide cuerpo2, double gravity, double distancia);
 double calcularFuerzaPlaneta(planeta cuerpo1, asteroide cuerpo2, double gravity, double distancia);
 void descomponerFuerzas(asteroide &ast1, asteroide &ast2, double fuerza, double angulo);
 void calcularNuevaAceleracion(asteroide ast, double *aceleracion);
 void calcularNuevasVelocidades(asteroide &ast, double aceleracion[2], double time_interval);
 void calcularNuevaPosicion(asteroide &ast, double time_interval);
-void comprobarBordes(asteroide &ast, double width, double height, double dmin);
-void actualizarAsteroide(asteroide *ast);
+void comprobarBordes(asteroide &ast, double width, double height);
 // --------------------------------------------------------------------------------------------------- //
 
 int main(int argc, char *argv[]) {
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 	int num_planetas = atoi(argv[3]);
 	int semilla = atoi(argv[4]);
 
-	// Constantes proporcionadas por el enunciado -
+	// Constantes proporcionadas por el enunciado
 	const double gravity = 6.674e-5;
 	const double time_interval = 0.1;
 	const double dmin = 5.0;
@@ -76,33 +76,33 @@ int main(int argc, char *argv[]) {
 	uniform_real_distribution<double> ydist{0.0, std::nextafter(height, std::numeric_limits<double>::max())};
 	normal_distribution<double> mdist{mean, sdm};
 
-	/* Crear fichero de salida */
-  ofstream init_file("init_conf.txt");
+	// Crear .txt con la configuracion inicial
+  ofstream fs("init_conf.txt");
 
- 	/* Escribir argumentos en el fichero init_conf.txt */
+ 	// Pasar al fichero los argumentos de la configuracion inicial
  	for (int i = 0; i < argc - 1; i++) {
  		if (i != 3){
-			init_file << argv[i+1] << " ";
+			fs << argv[i+1] << " ";
 		} else {
-			init_file << argv[i+1] << endl;
+			fs << argv[i+1] << endl;
 		}
  	}
 
- 	// Fija 3 decimales al escribir en los ficheros
- 	init_file << setprecision(3) << fixed;
+ 	// Fijar precisión de 3 decimales en los archivos
+ 	fs << setprecision(3) << fixed;
 
-	// Vector que almacena los asteroides
+	// Vector que contendra todos los asteroides
 	vector<asteroide> asteroides(num_asteroides);
-	// Vector que almacena los planetas
+	// Vector que contendra todos los planetas
 	vector<planeta> planetas(num_planetas);
 
-	// Generacion de los asteroides y escritura de sus datos en el fichero init_conf.txt
+	// Generar asteroides llenando su vector y escribir sus parametros en el .txt con la configuracion inicial
 	for(unsigned int i = 0; i < asteroides.size(); i++) {
 		asteroides[i] = {xdist(random), ydist(random), mdist(random), 0, 0, 0, 0, 0, 0, 0, 0};
-		init_file << asteroides[i].pX << " " << asteroides[i].pY << " " << asteroides[i].masa << endl;
+		fs << asteroides[i].pX << " " << asteroides[i].pY << " " << asteroides[i].masa << endl;
 	}
 
-	/* Generacion de los planetas y escritura de sus datos en el fichero init_conf.txt */
+	// Generar planetas llenando su vector y escribir sus parametros en el .txt de la configuracion inicial
 	for(unsigned int i = 0; i < planetas.size(); i++) {
 
 		if (i % 4 == 0) {
@@ -117,121 +117,122 @@ int main(int argc, char *argv[]) {
 		else if (i % 4 == 3) {
 			planetas[i] = {xdist(random), 200.0, mdist(random) * 10};
 		}
-		init_file << planetas[i].pX << " " << planetas[i].pY << " " << planetas[i].masa << endl;
+		fs << planetas[i].pX << " " << planetas[i].pY << " " << planetas[i].masa << endl;
 	}
 
-	/* Cierra el fichero init_cong.txt */
-	init_file.close();
+	// Cerrar init_conf.txt
+	fs.close();
 
-	/* Definir e inicializar variables auxiliares para los calculos */
+	// Variables para los calculos
 	double distancia = 0;
 	double pendiente = 0;
 	double angulo = 0;
-	double aceleracion[2] = {0}; // 2 componentes, X e Y
-	double vX_aux = 0;
-	double vY_aux = 0;
+	double aceleracion[2] = {0}; 	// eje X, eje Y
+	double vX_aux = 0;						// Utilizada para intercambiar velocidades
+	double vY_aux = 0;						// Utilizada para intercambiar velocidades
 	double fuerza = 0;
 
-	// Bucle exterior que ejecuta las iteraciones de la simulación
+	// Primer for loop: iteraciones introducida por el usuario
 	for (int i = 0; i < num_iteraciones; i++) {
 
-		// Primer bucle que itera sobre los asteroides
-		for (unsigned int j = 0; j < asteroides.size(); j++) {
+		// Segundo for loop: asteroides
+		for (unsigned int aa = 0; aa < asteroides.size(); aa++) {
 
-			/* Se evalua la interaccion entre el asteroide "j" y los demas que tengan índice mayor (a partir de j+1) */
-			for (unsigned int k = j+1; k < asteroides.size(); k++) {
+			// Tercer for loop: interaccion entre el asteroide aa y todos los siguientes
+			// Con esta se comprueba la interaccion entre todos los asteroides
+			for (unsigned int bb = aa+1; bb < asteroides.size(); bb++) {
 
-				/* Calcula la distancia entre el asteroide "j" y el asteroide "k" */
-				distancia = calcularDistanciaAsteroide(asteroides[j], asteroides[k]);
+				// Distancia entre asteroides
+				distancia = calcularDistanciaAsteroide(asteroides[aa], asteroides[bb]);
 
-				//TODO: OJO, SE PUEDE DAR EL CASO DE QUE LA DISTANCIA SEA MENOR PERO J SEA MAYOR, CON LO CUAL NO DEBERIA CALCULARSE LA FUERZA
-				/* Si la distancia entre ambos asteroides es menor a 5 se intercambian las velocidades de la iteracion anterior */
-				if (distancia <= dmin && j > 0) {
-						vX_aux = asteroides[j].vX;
-						vY_aux = asteroides[j].vY;
-						asteroides[j].vX = asteroides[k].vX;
-						asteroides[j].vY = asteroides[k].vY;
-						asteroides[k].vX = vX_aux;
-						asteroides[k].vY = vY_aux;
-				}	else {
-					/* Si la distancia es mayor que 5 se toma en cuenta la fuerza de atraccion entre ellos */
+				// Caso de que la distancia entre asteroides sea menor que 5:
+				// se intercambian las velocidades de los dos asteroides
+				if (distancia <= dmin && aa > 0) {
+						vX_aux = asteroides[aa].vX;
+						vY_aux = asteroides[aa].vY;
+						asteroides[aa].vX = asteroides[bb].vX;
+						asteroides[aa].vY = asteroides[bb].vY;
+						asteroides[bb].vX = vX_aux;
+						asteroides[bb].vY = vY_aux;
+				}
 
-					/* Calcula la pendiente entre el asteroide "j" y el asteroide "k", equilibrandola si es mayor a 1 o menor que -1 */
-					pendiente = calcularPendienteAsteroide(asteroides[j], asteroides[k]);
+				// Caso de que la distancia entre asteroides sea mayor que 5:
+				// calcular pendiente, angulo y fuerza
+				else {
 
-					/* El angulo entre asteroides sera la ArcTan(pendiente) */
+					// Calcular pendiente. Si es mayor que 1, se trunca a 1. Si es menor que -1, se trunca a -1
+					pendiente = calcularPendienteAsteroide(asteroides[aa], asteroides[bb]);
+
+					// Calcular angulo
 					angulo = atan(pendiente);
 
-					/* Calculo de la fuerza resultante y si sobre pasa el valor 100, se trunca*/
-					fuerza = calcularFuerzaAsteroide(asteroides[j], asteroides[k], gravity, distancia);
+					// Calcular fuerza. Si es mayor que 100, se trunca a este valor
+					fuerza = calcularFuerzaAsteroide(asteroides[aa], asteroides[bb], gravity, distancia);
 
-					// Se descomponen las fuerzas en componentes x e y.
-					descomponerFuerzas(asteroides[j], asteroides[k], fuerza, angulo);
+					// Descomponer fuerzas: eje X / eje Y
+					descomponerFuerzas(asteroides[aa], asteroides[bb], fuerza, angulo);
 				}
 			}
 		}
 
+		// Interaccion de planetas (pp) con asteroides (aa)
+		for (unsigned int pp = 0; pp < planetas.size(); pp++) {
+			for (unsigned int aa = 0; aa < asteroides.size(); aa++) {
 
-		for (unsigned int q = 0; q < planetas.size(); q++) {
-			/* Para el mismo asteroide "z", despues de evaluar la interaccion con el resto de asteroides, se hace lo propio
-			para con todos los planetas */
-			for (unsigned int z = 0; z < asteroides.size(); z++) {
+				// Calcular distancia entre planeta y asteroide
+				distancia = calcularDistanciaPlaneta(planetas[pp], asteroides[aa]);
 
-				/* Calcula la distancia entre el asteroide "z" y el planeta "q" */
-				distancia = calcularDistanciaPlaneta(planetas[q], asteroides[z]);
+				// Calcular pendiente. Si es mayor que 1, se trunca a 1. Si es menor que -1, se trunca a -1
+				pendiente = calcularPendientePlaneta(planetas[pp], asteroides[aa]);
 
-				/* Calculo de la pendiente entre elementos y equilibro el rollo */
-				pendiente = calcularPendientePlaneta(planetas[q], asteroides[z]);
-
-				/* EL angulo entre asteroide y planeta sera el ArcTan(pendiente) */
+				// Calcular angulo
 				angulo = atan(pendiente);
 
-				/* Calculo de la fuerza en el resultante entre ambos elementos */
-				fuerza = calcularFuerzaPlaneta(planetas[q], asteroides[z], gravity, distancia);
+				// Calcular fuerza. Si es mayor que 100, se trunca a este valor
+				fuerza = calcularFuerzaPlaneta(planetas[pp], asteroides[aa], gravity, distancia);
 
-				/* El producto de la fuerza por el coseno del angulo se agrega positvamente al sumatorio del asteroide "z" en el eje x */
-				asteroides[z].sum_fX += fuerza * cos(angulo);
-				/* El producto de la fuerza por el seno del angulo se agrega positvamente al sumatorio del asteroide "z" en el eje y */
-				asteroides[z].sum_fY += fuerza * sin(angulo);
+				// Sumar cada componente de la fuerza al sumatorio de cada eje (X, Y)
+				asteroides[aa].sum_fX += fuerza * cos(angulo);
+				asteroides[aa].sum_fY += fuerza * sin(angulo);
 			}
 		}
 
-		/* Si hubo rebote contra los bordes, se posiciona el asteroide y modifica su velocidad */
-		for (unsigned int j = 0; j < asteroides.size(); j++) {
+		// Calcular nuevos parametros de los asteroides
+		for (unsigned int aa = 0; aa < asteroides.size(); aa++) {
 
-			/* Calculo de las nuevas aceleraciones */
-			calcularNuevaAceleracion(asteroides[j], aceleracion);
+			// Nueva aceleracion
+			calcularNuevaAceleracion(asteroides[aa], aceleracion);
 
-			/* Calculo de las nuevas velocidades */
-			calcularNuevasVelocidades(asteroides[j], aceleracion, time_interval);
+			// Nueva velocidad
+			calcularNuevasVelocidades(asteroides[aa], aceleracion, time_interval);
 
-			/* Calculo de las nuevas posiciones */
-			calcularNuevaPosicion(asteroides[j], time_interval);
+			// Nueva posicion
+			calcularNuevaPosicion(asteroides[aa], time_interval);
 
-			/* Si el asteroide rebota contra un borde, se posiciona a 5 puntos del limite del espacio
-			y se modifica su velocidad */
-			comprobarBordes(asteroides[j], width, height, dmin);
+			// Si se da rebote contra un borde, se coloca el asteroide a 5 unidades de distancia y se cambia su velocidad
+			comprobarBordes(asteroides[aa], width, height);
 		}
 
-		/* Actualizar posiciones y velocidades de cada asteroide. Los sumatorios de fuerzas se reinician a 0 */
-		for (unsigned int ii = 0; ii< asteroides.size(); ii++) {
-			actualizarAsteroide(&asteroides[ii]);
+		// Actualizar asteroides con las nuevas velocidades. Fuerzas reseteadas a 0
+		for (unsigned int aa = 0; aa< asteroides.size(); aa++) {
+			actualizarAsteroide(&asteroides[aa]);
 		}
 	}
 
-	/* Crear el fichero de salida out.txt con un maximo de 3 decimales */
-	ofstream out_file("out.txt");
-	out_file << setprecision(3) << fixed;
+	// Crear fichero para output (out.txt)
+	// Fijar precision en 3 decimales
+	ofstream fs2("out.txt");
+	fs2 << setprecision(3) << fixed;
 
-	/* Escribe en el fichero de salida los valores finales de cada asteroide */
+	// Escribir en out.txt los parametros finales de todos los asteroides
 	for (unsigned int i = 0; i < asteroides.size(); i++) {
 
-		out_file << asteroides[i].pX << " " << asteroides[i].pY << " " << asteroides[i].vX << " " << asteroides[i].vY
+		fs2 << asteroides[i].pX << " " << asteroides[i].pY << " " << asteroides[i].vX << " " << asteroides[i].vY
 				<< " " << asteroides[i].masa << endl;
 	}
 
-	/* Cierra el fichero out.txt */
-	out_file.close();
+	// Cerrar out.txt
+	fs2.close();
 
 	return 0;
 }
@@ -241,11 +242,22 @@ int main(int argc, char *argv[]) {
 
 
 /////////////////////////////// Cuerpo de las funciones auxiliares ///////////////////////////////////
+void actualizarAsteroide(asteroide *ast){
+	ast -> pX = ast -> sig_pX;
+	ast -> pY = ast -> sig_pY;
+	ast -> vX = ast -> sig_vX;
+	ast -> vY = ast -> sig_vY;
+	ast -> sum_fX = 0;
+	ast -> sum_fY = 0;
+}
 
 double calcularDistanciaAsteroide(asteroide cuerpo1, asteroide cuerpo2){
 	return sqrt(pow(cuerpo1.pX - cuerpo2.pX, 2.0) + pow(cuerpo1.pY - cuerpo2.pY, 2.0));
 }
 
+double calcularDistanciaPlaneta(planeta cuerpo1, asteroide cuerpo2){
+	return sqrt(pow(cuerpo1.pX - cuerpo2.pX, 2.0) + pow(cuerpo1.pY - cuerpo2.pY, 2.0));
+}
 
 double calcularPendienteAsteroide(asteroide cuerpo1, asteroide cuerpo2){
 
@@ -263,28 +275,15 @@ double calcularPendienteAsteroide(asteroide cuerpo1, asteroide cuerpo2){
 	return pendiente;
 }
 
-double calcularFuerzaAsteroide(asteroide cuerpo1, asteroide cuerpo2, double gravity, double distancia){
-	double fuerza = (gravity * cuerpo1.masa * cuerpo2.masa) / (pow(distancia, 2.0));
-	/* Si la fuerza resultante es mayor a 100, se trunca a este valor */
-	if (fuerza > 100){
-		fuerza = 100;
-	}
-	return fuerza;
-}
-
-double calcularDistanciaPlaneta(planeta cuerpo1, asteroide cuerpo2){
-	return sqrt(pow(cuerpo1.pX - cuerpo2.pX, 2.0) + pow(cuerpo1.pY - cuerpo2.pY, 2.0));
-}
-
 double calcularPendientePlaneta(planeta cuerpo1, asteroide cuerpo2){
 
 	double pendiente = (cuerpo1.pY - cuerpo2.pY) / (cuerpo1.pX - cuerpo2.pX);
 
-	/* Si la pendiente es mayor a 1, se fija su valor a 1*/
+	// Si pendiente > 1, se trunca a 1
 	if (pendiente > 1){
 		pendiente = 1;
 	}
-	/* Si la pendiente es menor a -1, se fija su valor a -1*/
+	// Si pendiente < -1, se trunca a -1
 	else if (pendiente < -1) {
 		pendiente = -1;
 	}
@@ -292,9 +291,18 @@ double calcularPendientePlaneta(planeta cuerpo1, asteroide cuerpo2){
 	return pendiente;
 }
 
+double calcularFuerzaAsteroide(asteroide cuerpo1, asteroide cuerpo2, double gravity, double distancia){
+	double fuerza = (gravity * cuerpo1.masa * cuerpo2.masa) / (pow(distancia, 2.0));
+	// Si fuerza > 100, se trunca a 100
+	if (fuerza > 100){
+		fuerza = 100;
+	}
+	return fuerza;
+}
+
 double calcularFuerzaPlaneta(planeta cuerpo1, asteroide cuerpo2, double gravity, double distancia){
 	double fuerza = (gravity * cuerpo1.masa * cuerpo2.masa) / (pow(distancia, 2.0));
-	/* Si la fuerza resultante es mayor a 100, se trunca a este valor */
+	// Si fuerza > 100, se trunca a 100
 	if (fuerza > 100){
 		fuerza = 100;
 	}
@@ -302,11 +310,9 @@ double calcularFuerzaPlaneta(planeta cuerpo1, asteroide cuerpo2, double gravity,
 }
 
 void descomponerFuerzas(asteroide &ast1, asteroide &ast2, double fuerza, double angulo){
-		/* La fuerza resultante por el coseno del angulo se agrega positivamente al asteroide j y se resta al asteroide k en el eje x */
 	ast1.sum_fX += fuerza * cos(angulo);
 	ast2.sum_fX -= fuerza * cos(angulo);
 
-	/* La fuerza resultante por el seno del angulo se agrega positivamente al asteroide j y se resta al asteroide k en el eje y */
 	ast1.sum_fY += fuerza * sin(angulo);
 	ast2.sum_fY -= fuerza * sin(angulo);
 }
@@ -316,9 +322,6 @@ void calcularNuevaAceleracion(asteroide ast, double *aceleracion){
 	aceleracion[Y] = (1/ast.masa) * ast.sum_fY;
 }
 
-// Paso el array de aceleracion con el tamaño especificado por rollos de backward compatibility con c
-// que hacen que se pierda la informacion del tamaño de la array:
-// https://stackoverflow.com/questions/6165449/c-error-invalid-types-intint-for-array-subscript
 void calcularNuevasVelocidades(asteroide &ast, double aceleracion[2], double time_interval) {
 		ast.sig_vX = ast.vX + (aceleracion[X] * time_interval);
 		ast.sig_vY = ast.vY + (aceleracion[Y] * time_interval);
@@ -328,29 +331,21 @@ void calcularNuevaPosicion(asteroide &ast, double time_interval){
 	ast.sig_pX = ast.pX + (ast.sig_vX * time_interval);
 	ast.sig_pY = ast.pY + (ast.sig_vY * time_interval);
 }
-void comprobarBordes(asteroide &ast, double width, double height, double dmin){
+void comprobarBordes(asteroide &ast, double width, double height){
 	if (ast.sig_pX <= 0) {
-		ast.sig_pX = dmin;
+		ast.sig_pX = 5;
 		ast.sig_vX *= (-1);
 	}
 	if (ast.sig_pX >= width) {
-		ast.sig_pX = width - dmin;
+		ast.sig_pX = width - 5;
 		ast.sig_vX *= (-1);
 	}
 	if (ast.sig_pY <= 0) {
-		ast.sig_pY = dmin;
+		ast.sig_pY = 5;
 		ast.sig_vY *= (-1);
 	}
 	if (ast.sig_pY >= height) {
-		ast.sig_pY = height - dmin;
+		ast.sig_pY = height - 5;
 		ast.sig_vY *= (-1);
 	}
-}
-void actualizarAsteroide(asteroide *ast){
-	ast -> pX = ast -> sig_pX;
-	ast -> pY = ast -> sig_pY;
-	ast -> vX = ast -> sig_vX;
-	ast -> vY = ast -> sig_vY;
-	ast -> sum_fX = 0;
-	ast -> sum_fY = 0;
 }
