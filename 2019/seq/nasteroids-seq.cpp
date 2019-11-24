@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 	int num_planetas = atoi(argv[3]);
 	int semilla = atoi(argv[4]);
 
-	// Constantes proporcionadas por el enunciado -
+	// Constantes proporcionadas por el enunciado
 	const double gravity = 6.674e-5;
 	const double time_interval = 0.1;
 	const double dmin = 5.0;
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
 		fs << planetas[i].pX << " " << planetas[i].pY << " " << planetas[i].masa << endl;
 	}
 
-	// Cerrar init_conf.txt */
+	// Cerrar init_conf.txt
 	fs.close();
 
 	// Variables para los calculos
@@ -216,7 +216,6 @@ int main(int argc, char *argv[]) {
 		// Actualizar asteroides con las nuevas velocidades. Fuerzas reseteadas a 0
 		for (unsigned int aa = 0; aa< asteroides.size(); aa++) {
 			actualizarAsteroide(&asteroides[aa]);
-			cout << "Velocidad del asteroide [" << aa << "]: " << asteroides[aa].sig_vX << ", " << asteroides[aa].sig_vY << "\n";
 		}
 	}
 
@@ -280,11 +279,11 @@ double calcularPendientePlaneta(planeta cuerpo1, asteroide cuerpo2){
 
 	double pendiente = (cuerpo1.pY - cuerpo2.pY) / (cuerpo1.pX - cuerpo2.pX);
 
-	/* Si la pendiente es mayor a 1, se fija su valor a 1*/
+	// Si pendiente > 1, se trunca a 1
 	if (pendiente > 1){
 		pendiente = 1;
 	}
-	/* Si la pendiente es menor a -1, se fija su valor a -1*/
+	// Si pendiente < -1, se trunca a -1
 	else if (pendiente < -1) {
 		pendiente = -1;
 	}
@@ -294,7 +293,7 @@ double calcularPendientePlaneta(planeta cuerpo1, asteroide cuerpo2){
 
 double calcularFuerzaAsteroide(asteroide cuerpo1, asteroide cuerpo2, double gravity, double distancia){
 	double fuerza = (gravity * cuerpo1.masa * cuerpo2.masa) / (pow(distancia, 2.0));
-	/* Si la fuerza resultante es mayor a 100, se trunca a este valor */
+	// Si fuerza > 100, se trunca a 100
 	if (fuerza > 100){
 		fuerza = 100;
 	}
@@ -303,7 +302,7 @@ double calcularFuerzaAsteroide(asteroide cuerpo1, asteroide cuerpo2, double grav
 
 double calcularFuerzaPlaneta(planeta cuerpo1, asteroide cuerpo2, double gravity, double distancia){
 	double fuerza = (gravity * cuerpo1.masa * cuerpo2.masa) / (pow(distancia, 2.0));
-	/* Si la fuerza resultante es mayor a 100, se trunca a este valor */
+	// Si fuerza > 100, se trunca a 100
 	if (fuerza > 100){
 		fuerza = 100;
 	}
@@ -311,11 +310,9 @@ double calcularFuerzaPlaneta(planeta cuerpo1, asteroide cuerpo2, double gravity,
 }
 
 void descomponerFuerzas(asteroide &ast1, asteroide &ast2, double fuerza, double angulo){
-		/* La fuerza resultante por el coseno del angulo se agrega positivamente al asteroide j y se resta al asteroide k en el eje x */
 	ast1.sum_fX += fuerza * cos(angulo);
 	ast2.sum_fX -= fuerza * cos(angulo);
 
-	/* La fuerza resultante por el seno del angulo se agrega positivamente al asteroide j y se resta al asteroide k en el eje y */
 	ast1.sum_fY += fuerza * sin(angulo);
 	ast2.sum_fY -= fuerza * sin(angulo);
 }
@@ -325,9 +322,6 @@ void calcularNuevaAceleracion(asteroide ast, double *aceleracion){
 	aceleracion[Y] = (1/ast.masa) * ast.sum_fY;
 }
 
-// Paso el array de aceleracion con el tamaño especificado por rollos de backward compatibility con c
-// que hacen que se pierda la informacion del tamaño de la array:
-// https://stackoverflow.com/questions/6165449/c-error-invalid-types-intint-for-array-subscript
 void calcularNuevasVelocidades(asteroide &ast, double aceleracion[2], double time_interval) {
 		ast.sig_vX = ast.vX + (aceleracion[X] * time_interval);
 		ast.sig_vY = ast.vY + (aceleracion[Y] * time_interval);
