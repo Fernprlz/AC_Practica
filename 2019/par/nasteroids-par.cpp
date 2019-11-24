@@ -38,7 +38,8 @@ double calcularFuerzaAsteroide(asteroide cuerpo1, asteroide cuerpo2, double grav
 double calcularDistanciaPlaneta(planeta cuerpo1, asteroide cuerpo2);
 double calcularPendientePlaneta(planeta cuerpo1, asteroide cuerpo2);
 double calcularFuerzaPlaneta(planeta cuerpo1, asteroide cuerpo2, double gravity, double distancia);
-void descomponerFuerzas(double *sum_total_f1, double *sum_total_f2, double fuerza, double angulo);
+void descomponerFuerzasX(double *sum_total_f1, double *sum_total_f2, double fuerza, double angulo);
+void descomponerFuerzasY(double *sum_total_f1, double *sum_total_f2, double fuerza, double angulo);
 void calcularNuevaAceleracion(asteroide ast, double sum_fX, double sum_fY, double *aceleracion);
 void calcularNuevasVelocidades(asteroide &ast, double aceleracion[2], double time_interval);
 void calcularNuevaPosicion(asteroide &ast, double time_interval);
@@ -203,8 +204,8 @@ int main(int argc, char *argv[]) {
 					fuerza = calcularFuerzaAsteroide(asteroides[ast_1], asteroides[ast_2], gravity, distancia);
 
 					// Descomponer fuerzas: eje X / eje Y
-					descomponerFuerzas(&sum_total_fX[ast_1][ast_2], &sum_total_fX[ast_2][ast_1], fuerza, angulo);
-					descomponerFuerzas(&sum_total_fY[ast_1][ast_2], &sum_total_fY[ast_2][ast_1], fuerza, angulo);
+					descomponerFuerzasX(&sum_total_fX[ast_1][ast_2], &sum_total_fX[ast_2][ast_1], fuerza, angulo);
+					descomponerFuerzasY(&sum_total_fY[ast_1][ast_2], &sum_total_fY[ast_2][ast_1], fuerza, angulo);
 				}
 			}
 		}
@@ -381,9 +382,14 @@ double calcularFuerzaPlaneta(planeta cuerpo1, asteroide cuerpo2, double gravity,
 		return fuerza;
 }
 
-void descomponerFuerzas(double *sum_total_f1, double *sum_total_f2, double fuerza, double angulo){
+void descomponerFuerzasX(double *sum_total_f1, double *sum_total_f2, double fuerza, double angulo){
 	*sum_total_f1 += fuerza * cos(angulo);
 	*sum_total_f2 -= fuerza * cos(angulo);
+}
+
+void descomponerFuerzasY(double *sum_total_f1, double *sum_total_f2, double fuerza, double angulo){
+	*sum_total_f1 += fuerza * sin(angulo);
+	*sum_total_f2 -= fuerza * sin(angulo);
 }
 
 void calcularNuevaAceleracion(asteroide ast, double sum_fX, double sum_fY, double *aceleracion){
