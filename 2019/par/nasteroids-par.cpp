@@ -42,7 +42,7 @@ void descomponerFuerzas(double *sum_total_f1, double *sum_total_f2, double fuerz
 void calcularNuevaAceleracion(asteroide ast, double sum_fX, double sum_fY, double *aceleracion);
 void calcularNuevasVelocidades(asteroide &ast, double aceleracion[2], double time_interval);
 void calcularNuevaPosicion(asteroide &ast, double time_interval);
-void comprobarBordes(asteroide &ast, double width, double height);
+void comprobarBordes(asteroide &ast, double width, double height, double dmin);
 void actualizarAsteroide(asteroide *ast, double *sum_fX, double *sum_fY);
 // --------------------------------------------------------------------------------------------------- //
 
@@ -78,17 +78,17 @@ int main(int argc, char *argv[]) {
 	normal_distribution<double> mdist{mean, sdm};
 
 	/* Crea un fichero de salida */
-	ofstream fs("init_conf.txt");
+	ofstream init_file("init_conf.txt");
 
 	/* Escribe los argumentos en el fichero init_conf.txt */
 	for (int ii = 0; ii < argc - 1; ii++) {
 
-		if (ii != 3) fs << argv[ii + 1] << " ";
-		else fs << argv[ii + 1] << endl;
+		if (ii != 3) init_file << argv[ii + 1] << " ";
+		else init_file << argv[ii + 1] << endl;
 	}
 
 	/* Fija 3 decimales al escribir en el fichero de configuracion inicial init_conf.txt */
-	fs << setprecision(3) << fixed;
+	init_file << setprecision(3) << fixed;
 
 	// Vector que almacena los asteroides
 	vector<asteroide> asteroides(num_asteroides);
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
 	// Generacion de los asteroides y escritura de sus datos en el fichero init_conf.txt
 	for(unsigned int ast = 0; ast < asteroides.size(); ast++) {
 		asteroides[ast] = {xdist(random), ydist(random), mdist(random), 0, 0, 0, 0, 0, 0};
-		fs << asteroides[ast].pX << " " << asteroides[ast].pY << " " << asteroides[ast].masa << endl;
+		init_file << asteroides[ast].pX << " " << asteroides[ast].pY << " " << asteroides[ast].masa << endl;
 	}
 
 
@@ -117,11 +117,11 @@ int main(int argc, char *argv[]) {
 		else if (pla % 4 == 3) {
 			planetas[pla] = {xdist(random), height, mdist(random) * 10};
 		}
-		fs << planetas[pla].pX << " " << planetas[pla].pY << " " << planetas[pla].masa << endl;
+		init_file << planetas[pla].pX << " " << planetas[pla].pY << " " << planetas[pla].masa << endl;
 	}
 
 	/* Cierra el fichero init_conf.txt */
-	fs.close();
+	init_file.close();
 
 	/* Definicion e inicializacion de variables auxiliares para los calculos */
 	double distancia = 0;
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
 					/* Calculo de la fuerza resultante entre ambos asteroides */
 					fuerza = calcularFuerzaAsteroide(asteroides[ast_1], asteroides[ast_2], gravity, distancia);
 
-					/* La fuerza resultante por el coseno del angulo se agrega positivamente al asteroide j y se resta al asteroide k en el eje x */				
+					/* La fuerza resultante por el coseno del angulo se agrega positivamente al asteroide j y se resta al asteroide k en el eje x */
 					descomponerFuerzas(&sum_total_fX[ast_1][ast_2], &sum_total_fX[ast_2][ast_1], fuerza, angulo);
 					/* La fuerza resultante por el seno del angulo se agrega positivamente al asteroide j y se resta al asteroide k en el eje y */
 					descomponerFuerzas(&sum_total_fY[ast_1][ast_2], &sum_total_fY[ast_2][ast_1], fuerza, angulo);
@@ -286,7 +286,7 @@ int main(int argc, char *argv[]) {
 			calcularNuevaPosicion(asteroides[ast], time_interval);
 
 			/* Se hubo rebote contra los bordes, se reposiciona el asteroide y modifica su velocidad */
-			comprobarBordes(asteroides[ast], width, height);
+			comprobarBordes(asteroides[ast], width, height, dmin);
 		}
 
 		/* Para cada asteroide se actualizan paralelamente las nuevas posiciones y velocidades. Tambien, todos los sumatorios
@@ -304,24 +304,21 @@ int main(int argc, char *argv[]) {
 			}
 
 		}
-		for(unsigned int ii = 0; ii < asteroides.size(); ii++){
-			cout << "Velocidad del asteroide [" << ii << "]: " << asteroides[ii].sig_vX << ", " << asteroides[ii].sig_vY << "\n";
-		}
 	}
 
 	/* Crea el fichero de salida out.txt y fija 3 decimales al escribir en el */
-	ofstream fs2("out.txt");
-	fs2 << setprecision(3) << fixed;
+	ofstream out_file("out.txt");
+	out_file << setprecision(3) << fixed;
 
 	/* Escribe en el fichero de salida los valores finales de cada asteroide */
 	for (unsigned int i = 0; i < asteroides.size(); i++) {
 
-		fs2 << asteroides[i].pX << " " << asteroides[i].pY << " " << asteroides[i].vX << " " << asteroides[i].vY
+		out_file << asteroides[i].pX << " " << asteroides[i].pY << " " << asteroides[i].vX << " " << asteroides[i].vY
 		<< " " << asteroides[i].masa << endl;
 	}
 
 	/* Cierra el fichero out.txt */
-	fs2.close();
+	out_file.close();
 
 	/* Libera todas la memoria reservada para las matrices que almacenan las fuerzas */
 	#pragma omp parallel for
@@ -413,21 +410,21 @@ void calcularNuevaPosicion(asteroide &ast, double time_interval){
 	ast.sig_pX = ast.pX + (ast.sig_vX * time_interval);
 	ast.sig_pY = ast.pY + (ast.sig_vY * time_interval);
 }
-void comprobarBordes(asteroide &ast, double width, double height){
+void comprobarBordes(asteroide &ast, double width, double height, double dmin){
 	if (ast.sig_pX <= 0) {
-		ast.sig_pX = 5;
+		ast.sig_pX = dmin;
 		ast.sig_vX *= (-1);
 	}
 	if (ast.sig_pX >= width) {
-		ast.sig_pX = width - 5;
+		ast.sig_pX = width - dmin;
 		ast.sig_vX *= (-1);
 	}
 	if (ast.sig_pY <= 0) {
-		ast.sig_pY = 5;
+		ast.sig_pY = dmin;
 		ast.sig_vY *= (-1);
 	}
 	if (ast.sig_pY >= height) {
-		ast.sig_pY = height - 5;
+		ast.sig_pY = height - dmin;
 		ast.sig_vY *= (-1);
 	}
 }

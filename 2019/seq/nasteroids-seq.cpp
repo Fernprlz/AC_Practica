@@ -41,7 +41,7 @@ void descomponerFuerzas(asteroide &ast1, asteroide &ast2, double fuerza, double 
 void calcularNuevaAceleracion(asteroide ast, double *aceleracion);
 void calcularNuevasVelocidades(asteroide &ast, double aceleracion[2], double time_interval);
 void calcularNuevaPosicion(asteroide &ast, double time_interval);
-void comprobarBordes(asteroide &ast, double width, double height);
+void comprobarBordes(asteroide &ast, double width, double height, double dmin);
 void actualizarAsteroide(asteroide *ast);
 // --------------------------------------------------------------------------------------------------- //
 
@@ -77,19 +77,19 @@ int main(int argc, char *argv[]) {
 	normal_distribution<double> mdist{mean, sdm};
 
 	/* Crear fichero de salida */
-  ofstream fs("init_conf.txt");
+  ofstream init_file("init_conf.txt");
 
  	/* Escribir argumentos en el fichero init_conf.txt */
  	for (int i = 0; i < argc - 1; i++) {
  		if (i != 3){
-			fs << argv[i+1] << " ";
+			init_file << argv[i+1] << " ";
 		} else {
-			fs << argv[i+1] << endl;
+			init_file << argv[i+1] << endl;
 		}
  	}
 
  	// Fija 3 decimales al escribir en los ficheros
- 	fs << setprecision(3) << fixed;
+ 	init_file << setprecision(3) << fixed;
 
 	// Vector que almacena los asteroides
 	vector<asteroide> asteroides(num_asteroides);
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
 	// Generacion de los asteroides y escritura de sus datos en el fichero init_conf.txt
 	for(unsigned int i = 0; i < asteroides.size(); i++) {
 		asteroides[i] = {xdist(random), ydist(random), mdist(random), 0, 0, 0, 0, 0, 0, 0, 0};
-		fs << asteroides[i].pX << " " << asteroides[i].pY << " " << asteroides[i].masa << endl;
+		init_file << asteroides[i].pX << " " << asteroides[i].pY << " " << asteroides[i].masa << endl;
 	}
 
 	/* Generacion de los planetas y escritura de sus datos en el fichero init_conf.txt */
@@ -117,11 +117,11 @@ int main(int argc, char *argv[]) {
 		else if (i % 4 == 3) {
 			planetas[i] = {xdist(random), 200.0, mdist(random) * 10};
 		}
-		fs << planetas[i].pX << " " << planetas[i].pY << " " << planetas[i].masa << endl;
+		init_file << planetas[i].pX << " " << planetas[i].pY << " " << planetas[i].masa << endl;
 	}
 
 	/* Cierra el fichero init_cong.txt */
-	fs.close();
+	init_file.close();
 
 	/* Definir e inicializar variables auxiliares para los calculos */
 	double distancia = 0;
@@ -210,29 +210,28 @@ int main(int argc, char *argv[]) {
 
 			/* Si el asteroide rebota contra un borde, se posiciona a 5 puntos del limite del espacio
 			y se modifica su velocidad */
-			comprobarBordes(asteroides[j], width, height);
+			comprobarBordes(asteroides[j], width, height, dmin);
 		}
 
 		/* Actualizar posiciones y velocidades de cada asteroide. Los sumatorios de fuerzas se reinician a 0 */
 		for (unsigned int ii = 0; ii< asteroides.size(); ii++) {
 			actualizarAsteroide(&asteroides[ii]);
-			cout << "Velocidad del asteroide [" << ii << "]: " << asteroides[ii].sig_vX << ", " << asteroides[ii].sig_vY << "\n";
 		}
 	}
 
 	/* Crear el fichero de salida out.txt con un maximo de 3 decimales */
-	ofstream fs2("out.txt");
-	fs2 << setprecision(3) << fixed;
+	ofstream out_file("out.txt");
+	out_file << setprecision(3) << fixed;
 
 	/* Escribe en el fichero de salida los valores finales de cada asteroide */
 	for (unsigned int i = 0; i < asteroides.size(); i++) {
 
-		fs2 << asteroides[i].pX << " " << asteroides[i].pY << " " << asteroides[i].vX << " " << asteroides[i].vY
+		out_file << asteroides[i].pX << " " << asteroides[i].pY << " " << asteroides[i].vX << " " << asteroides[i].vY
 				<< " " << asteroides[i].masa << endl;
 	}
 
 	/* Cierra el fichero out.txt */
-	fs2.close();
+	out_file.close();
 
 	return 0;
 }
@@ -329,21 +328,21 @@ void calcularNuevaPosicion(asteroide &ast, double time_interval){
 	ast.sig_pX = ast.pX + (ast.sig_vX * time_interval);
 	ast.sig_pY = ast.pY + (ast.sig_vY * time_interval);
 }
-void comprobarBordes(asteroide &ast, double width, double height){
+void comprobarBordes(asteroide &ast, double width, double height, double dmin){
 	if (ast.sig_pX <= 0) {
-		ast.sig_pX = 5;
+		ast.sig_pX = dmin;
 		ast.sig_vX *= (-1);
 	}
 	if (ast.sig_pX >= width) {
-		ast.sig_pX = width - 5;
+		ast.sig_pX = width - dmin;
 		ast.sig_vX *= (-1);
 	}
 	if (ast.sig_pY <= 0) {
-		ast.sig_pY = 5;
+		ast.sig_pY = dmin;
 		ast.sig_vY *= (-1);
 	}
 	if (ast.sig_pY >= height) {
-		ast.sig_pY = height - 5;
+		ast.sig_pY = height - dmin;
 		ast.sig_vY *= (-1);
 	}
 }
